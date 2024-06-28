@@ -1,8 +1,8 @@
-from base64 import b64encode
+from io import BytesIO
 from typing import Any, List, Optional
 
-from fastapi import HTTPException
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
@@ -10,9 +10,11 @@ from sqlalchemy.orm.exc import NoResultFound
 from db.models import DbBlogPost
 from db.schemas import PostIn, PostOut
 
+Error_404 = HTTPException(status_code=404, detail="Not found.")
+
 
 async def create_post(
-    post: PostIn, image: Optional[UploadFile], db: Session
+        post: PostIn, image: Optional[UploadFile], db: Session
 ) -> DbBlogPost:
     image_content = await image.read() if image else None
 
@@ -38,24 +40,19 @@ def delete_post(post_id: int, db: Session) -> dict[str, Any]:
 
 def get_post(post_id: int, db: Session) -> PostOut:
     try:
+        return db.query(DbBlogPost).get(post_id).as_post_out()
+    except NoResultFound:
+        raise Error_404
+
+
+def get_post_image(post_id, db) -> StreamingResponse:
+    try:
         post = db.query(DbBlogPost).get(post_id)
     except NoResultFound:
-        raise HTTPException(404, detail="Post was not found.")
-
-    # Convert image bytes to base64-encoded string
-    image_str = None
-    if post.image:
-        image_str = b64encode(post.image).decode("utf-8")
-
-    return PostOut(
-        id=post.id,
-        title=post.title,
-        content=post.content,
-        image=image_str,
-        date_posted=post.date_posted,
-        date_updated=post.date_updated,
-        author=post.author,
-    )
+        raise Error_404
+    if not post.image:
+        raise Error_404
+    return StreamingResponse(BytesIO(post.image), media_type="image/png")
 
 
 def update_post(new_post: PostIn, post_id: int, db: Session) -> PostOut:
@@ -63,12 +60,12 @@ def update_post(new_post: PostIn, post_id: int, db: Session) -> PostOut:
 
 
 def get_posts(db: Session) -> List[PostOut]:
+    posts = db.query(DbBlogPost).all()
+    return [post.as_post_out() for post in posts]
+
+
+def upload_image(post_id: int, image: UploadFile, db: Session):
     raise NotImplementedError()
-
-
-def upload_image(post_id: int, uploaded_file: UploadFile, db: Session):
-    raise NotImplementedError()
-
 
 # def get_author_id(author_name: str, db: Session) -> int:
 #     try:

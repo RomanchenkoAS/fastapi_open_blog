@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, Integer, LargeBinary, String
 
 from db.database_definition import Base
+from db.schemas import PostOut
 
 # Define the naming conventions
 naming_convention = {
@@ -32,8 +33,17 @@ class DbBlogPost(Base):
     def __repr__(self):
         return f"<BlogPost {self.id} '{self.title}'>"
 
+    def as_post_out(self) -> PostOut:
+        return PostOut(
+            id=self.id,
+            title=self.title,
+            content=self.content,
+            image_url=f"/blogposts/{self.id}/image" if self.image else None,
+            date_posted=self.date_posted,
+            date_updated=self.date_updated,
+            author=self.author
+        )
 
-#
 # class DbAuthor(Base):
 #     __tablename__ = "authors_t"
 #     id = Column(Integer, primary_key=True)

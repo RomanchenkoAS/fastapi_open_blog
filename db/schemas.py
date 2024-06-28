@@ -10,18 +10,14 @@ class PostIn(BaseModel):
     author: str
 
 
-class ImageIn(BaseModel):
-    image: bytes
-
-
 class PostOut(BaseModel):
     id: int
     title: str
     content: str
-    image: Optional[str] = None
     date_posted: datetime
     date_updated: datetime
     author: Optional[str] = None
+    image_url: Optional[str] = None
 
     class Config:
         orm_mode = True

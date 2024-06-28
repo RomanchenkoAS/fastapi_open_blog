@@ -1,3 +1,5 @@
+import io
+
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
@@ -10,75 +12,74 @@ from db.models import DbBlogPost
 class TestBlogPostEndpoints:
 
     @pytest.fixture(autouse=True)
-    def setup(self, test_db: Session):
+    def setup(self, test_db: Session, test_client: TestClient):
         # Create a test author
-
-        raise NotImplementedError("Fix author")
-        self.author = DbAuthor(name="Test Author")
-        test_db.add(self.author)
-        test_db.commit()
-        test_db.refresh(self.author)
+        self.author = "Test Author"
         self.test_db = test_db
+        self.test_client = test_client
 
-    def test_create_blog_post(self, test_client: TestClient):
-        response = test_client.post(
+    def test_create_blog_post(self):
+        image_content = b"this is a test image"
+        files = {"image": ("test_image.png", io.BytesIO(image_content), "image/png")}
+        response = self.test_client.post(
             "/blogpost",
-            json={
+            data={
                 "title": "New Blog Post",
                 "content": "Content of the new blog post",
-                "author_name": self.author.name,
+                "author": self.author,
             },
+            files=files,
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["title"] == "New Blog Post"
         assert data["content"] == "Content of the new blog post"
-        assert data["author"]["name"] == self.author.name
+        assert data["author"] == self.author
 
-    def test_get_all_blog_posts(self, test_client: TestClient):
+    def test_get_all_blog_posts(self):
         # Create a test blog post
         blog_post = DbBlogPost(
-            title="Blog Post", content="Some content", author_id=self.author.id
+            title="Blog Post", content="Some content", author=self.author
         )
         self.test_db.add(blog_post)
         self.test_db.commit()
         self.test_db.refresh(blog_post)
 
-        response = test_client.get("/blogpost")
+        response = self.test_client.get("/blogpost")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 1
         assert data[0]["title"] == "Blog Post"
         assert data[0]["content"] == "Some content"
-        assert data[0]["author_id"] == self.author.id
+        assert data[0]["author"] == self.author
 
-    def test_get_single_blog_post(self, test_client: TestClient):
+    def test_get_single_blog_post(self):
         # Create a test blog post
         blog_post = DbBlogPost(
-            title="Single Blog Post", content="Some content", author_id=self.author.id
+            title="Single Blog Post", content="Some content", author=self.author
         )
         self.test_db.add(blog_post)
         self.test_db.commit()
         self.test_db.refresh(blog_post)
 
-        response = test_client.get(f"/blogpost/{blog_post.id}")
+        response = self.test_client.get(f"/blogpost/{blog_post.id}")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["title"] == "Single Blog Post"
         assert data["content"] == "Some content"
-        assert data["author_id"] == self.author.id
+        assert data["author"] == self.author
 
-    def test_delete_blog_post(self, test_client: TestClient):
+    def test_delete_blog_post(self):
         # Create a test blog post
         blog_post = DbBlogPost(
-            title="Blog Post to Delete", content="Some content", author_id=self.author.id
+            title="Blog Post to Delete", content="Some content", author=self.author
         )
         self.test_db.add(blog_post)
         self.test_db.commit()
         self.test_db.refresh(blog_post)
 
-        response = test_client.delete(f"/blogpost/{blog_post.id}")
+        response = self.test_client.delete(f"/blogpost/{blog_post.id}")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["title"] == "Blog Post to Delete"
@@ -89,16 +90,16 @@ class TestBlogPostEndpoints:
         )
         assert deleted_blog_post is None
 
-    def test_update_blog_post(self, test_client: TestClient):
+    def test_update_blog_post(self):
         # Create a test blog post
         blog_post = DbBlogPost(
-            title="Blog Post to Update", content="Some content", author_id=self.author.id
+            title="Blog Post to Update", content="Some content", author=self.author
         )
         self.test_db.add(blog_post)
         self.test_db.commit()
         self.test_db.refresh(blog_post)
 
-        response = test_client.patch(
+        response = self.test_client.patch(
             f"/blogpost/{blog_post.id}",
             json={"title": "Updated Blog Post", "content": "Updated content"},
         )
@@ -114,10 +115,10 @@ class TestBlogPostEndpoints:
         assert updated_blog_post.title == "Updated Blog Post"
         assert updated_blog_post.content == "Updated content"
 
-    def test_upload_image_to_blog_post(self, test_client: TestClient):
+    def test_upload_image_to_blog_post(self):
         # Create a test blog post
         blog_post = DbBlogPost(
-            title="Blog Post with Image", content="Some content", author_id=self.author.id
+            title="Blog Post with Image", content="Some content", author=self.author
         )
         self.test_db.add(blog_post)
         self.test_db.commit()
@@ -127,7 +128,7 @@ class TestBlogPostEndpoints:
         image_data = b"fake_image_data"
         files = {"file": ("test_image.png", image_data, "image/png")}
 
-        response = test_client.post(f"/blogpost/{blog_post.id}/upload", files=files)
+        response = self.test_client.post(f"/blogpost/{blog_post.id}/upload", files=files)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["id"] == blog_post.id

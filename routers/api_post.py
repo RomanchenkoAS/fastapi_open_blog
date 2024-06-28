@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, File, UploadFile, Depends, Form
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from db.database_definition import get_db
@@ -21,7 +21,7 @@ async def create_post(
     image: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
-    post_in = PostIn(itle=title, content=content, author=author)
+    post_in = PostIn(title=title, content=content, author=author)
     post_out = await blog.create_post(post_in, image, db)
     return post_out
 
@@ -29,6 +29,11 @@ async def create_post(
 @router.get("/{post_id}", response_model=PostOut)
 async def get_post(post_id: int, db: Session = Depends(get_db)):
     return blog.get_post(post_id, db)
+
+
+@router.get("/{post_id}/image")
+async def get_post_image(post_id: int, db: Session = Depends(get_db)):
+    return blog.get_post_image(post_id, db)
 
 
 @router.get("/", response_model=List[PostOut])

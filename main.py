@@ -7,7 +7,8 @@ warnings.filterwarnings(
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from routers.api_router import router as api_router
+
+from routers.api_post import router as api_router
 
 app = FastAPI()
 app.include_router(api_router)

@@ -40,7 +40,8 @@ def delete_post(post_id: int, db: Session) -> dict[str, Any]:
 
 def get_post(post_id: int, db: Session) -> PostOut:
     try:
-        return db.query(DbBlogPost).get(post_id).as_post_out()
+        post = db.query(DbBlogPost).get(post_id)
+        return PostOut.from_db_post(post)
     except NoResultFound:
         raise Error_404
 
@@ -61,7 +62,7 @@ def update_post(new_post: PostIn, post_id: int, db: Session) -> PostOut:
 
 def get_posts(db: Session) -> List[PostOut]:
     posts = db.query(DbBlogPost).all()
-    return [post.as_post_out() for post in posts]
+    return [PostOut.from_db_post(post) for post in posts]
 
 
 def upload_image(post_id: int, image: UploadFile, db: Session):

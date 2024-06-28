@@ -10,9 +10,11 @@ class PostIn(BaseModel):
     author_id: int
 
 
+# Unused vvvv
 class UserIn(BaseModel):
     name: str
 
 
+# Unused vvvv
 class ImageIn(BaseModel):
     image: bytes

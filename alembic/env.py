@@ -3,11 +3,10 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from alembic.config import Config
-from db.database_definition import SQL_ALCHEMY_DATABASE_URL, Base
+from db.database_definition import SQL_ALCHEMY_DATABASE_URL
 
 # To enable auto-detect schemas
-from db.models import *  # noqa
+from db.models import Base  # noqa
 
 # Retrieve the Alembic Config object and set the SQLAlchemy URL.
 config = context.config
@@ -42,7 +41,8 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """
     Run migrations in 'online' mode.
-    In this scenario we need to create an Engine and associate a connection with the context.
+    In this scenario we need to create an Engine and associate
+    a connection with the context.
     """
     configuration = config.get_section(config.config_ini_section)
     if configuration is None:
@@ -64,7 +64,8 @@ def run_migrations_online() -> None:
             context.run_migrations()
 
 
-# Determine if we are running in offline or online mode, and run the appropriate migration function.
+# Determine if we are running in offline or online mode,
+# and run the appropriate migration function.
 if context.is_offline_mode():
     run_migrations_offline()
 else:

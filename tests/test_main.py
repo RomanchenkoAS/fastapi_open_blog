@@ -47,8 +47,7 @@ def test_database(test_client, test_db):
     assert blog_post.content == "This is a test blog post content."
     assert blog_post.author_id == author.id
 
-    # Optionally, you can query the database to ensure the objects were inserted correctly
-    # Example:
+    # Query the database to ensure the objects were inserted correctly
     queried_author = test_db.query(DbAuthor).filter(DbAuthor.id == author.id).first()
     queried_blog_post = (
         test_db.query(DbBlogPost).filter(DbBlogPost.id == blog_post.id).first()

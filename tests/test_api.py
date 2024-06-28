@@ -3,7 +3,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from db.models import DbAuthor, DbBlogPost
+from db.models import DbBlogPost
 
 
 @pytest.mark.usefixtures("test_client", "test_db")
@@ -12,6 +12,8 @@ class TestBlogPostEndpoints:
     @pytest.fixture(autouse=True)
     def setup(self, test_db: Session):
         # Create a test author
+
+        raise NotImplementedError("Fix author")
         self.author = DbAuthor(name="Test Author")
         test_db.add(self.author)
         test_db.commit()
@@ -24,14 +26,14 @@ class TestBlogPostEndpoints:
             json={
                 "title": "New Blog Post",
                 "content": "Content of the new blog post",
-                "author_id": self.author.id,
+                "author_name": self.author.name,
             },
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["title"] == "New Blog Post"
         assert data["content"] == "Content of the new blog post"
-        assert data["author_id"] == self.author.id
+        assert data["author"]["name"] == self.author.name
 
     def test_get_all_blog_posts(self, test_client: TestClient):
         # Create a test blog post

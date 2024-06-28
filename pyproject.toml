@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastapi_open_blog"
-version = "0.2.1"
+version = "0.4.1"
 description = "Open blog on FastAPI."
 authors = ["RomanchenkoAS <RomanchenkoAS@yandex.ru>"]
 readme = "README.md"
@@ -61,7 +61,7 @@ exclude = '''
 '''
 
 [tool.isort]
-profile = "black"  # or any other profile you prefer
+profile = "black"
 line_length = 90
 skip = [
     "alembic/versions",

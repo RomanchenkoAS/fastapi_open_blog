@@ -1,8 +1,12 @@
+import warnings
+
+# Ignore specific Pydantic warning about configuration key changes
+warnings.filterwarnings(
+    "ignore", category=UserWarning, message=r".*Valid config keys have changed in V2.*"
+)
+
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-
-from db import models
-from db.database_definition import engine
 from routers.api_router import router as api_router
 
 app = FastAPI()
@@ -14,4 +18,7 @@ def index():
     return RedirectResponse(url="/docs")
 
 
-models.Base.metadata.create_all(bind=engine)
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

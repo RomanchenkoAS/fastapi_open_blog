@@ -15,7 +15,7 @@
 ### Install Poetry
 
 - If poetry package manager is not installed, you can install it like this for Windows:
-  
+
   ```shell
   (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python - <br>
   curl -sSL https://install.python-poetry.org | python -

@@ -10,7 +10,7 @@ from db.database_definition import Base, get_db
 from main import app
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def test_db():
     """
     Set up a test database for the duration of the testing session.
@@ -30,7 +30,7 @@ def test_db():
     os.remove("test.db")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def test_client(test_db):
     """
     Set up a TestClient for the FastAPI app and override the get_db dependency.

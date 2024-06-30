@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from fastapi import HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
@@ -13,29 +13,29 @@ from db.schemas import PostIn, PostOut
 Error_404 = HTTPException(status_code=404, detail="Not found.")
 
 
-async def create_post(
-        post: PostIn, image: Optional[UploadFile], db: Session
-) -> DbBlogPost:
+async def create_post(post: PostIn, image: Optional[UploadFile], db: Session) -> PostOut:
     image_content = await image.read() if image else None
 
-    new_post = DbBlogPost(
-        title=post.title,
-        content=post.content,
-        author=post.author,
-        image=image_content,
-    )
+    new_post = DbBlogPost(title=post.title, content=post.content, author=post.author, image=image_content, )
     try:
         db.add(new_post)
         db.commit()
         db.refresh(new_post)
-        return new_post
+        return PostOut.from_db_post(new_post)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(400, detail="Post already exists.")
+        raise HTTPException(400, detail="Update failed due to integrity constraint violation")
 
 
-def delete_post(post_id: int, db: Session) -> dict[str, Any]:
-    raise NotImplementedError()
+def delete_post(post_id: int, db: Session) -> PostOut:
+    try:
+        post = db.query(DbBlogPost).get(post_id)
+
+        db.delete(post)
+        db.commit()
+        return PostOut.from_db_post(post)
+    except NoResultFound:
+        raise Error_404
 
 
 def get_post(post_id: int, db: Session) -> PostOut:
@@ -56,17 +56,41 @@ def get_post_image(post_id, db) -> StreamingResponse:
     return StreamingResponse(BytesIO(post.image), media_type="image/png")
 
 
-def update_post(new_post: PostIn, post_id: int, db: Session) -> PostOut:
+async def update_post(input_data: dict, image: Optional[UploadFile], post_id: int, db: Session) -> PostOut:
+    try:
+        existing_post = db.query(DbBlogPost).get(post_id)
+
+        print(f"Existing : {existing_post}")
+        print(f"Input : {input_data}")
+
+        if title := input_data.get("title", None):
+            existing_post.title = title
+        if content := input_data.get("content", None):
+            existing_post.content = content
+        if author := input_data.get("author", None):
+            existing_post.author = author
+
+        if image:
+            image_content = await image.read()
+            existing_post.image = image_content
+
+        db.commit()
+        db.refresh(existing_post)
+        return PostOut.from_db_post(existing_post)
+    except NoResultFound:
+        raise Error_404
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Update failed due to integrity constraint violation")
+
+
+async def upload_image(post_id: int, image: UploadFile, db: Session):
     raise NotImplementedError()
 
 
 def get_posts(db: Session) -> List[PostOut]:
     posts = db.query(DbBlogPost).all()
     return [PostOut.from_db_post(post) for post in posts]
-
-
-def upload_image(post_id: int, image: UploadFile, db: Session):
-    raise NotImplementedError()
 
 # def get_author_id(author_name: str, db: Session) -> int:
 #     try:

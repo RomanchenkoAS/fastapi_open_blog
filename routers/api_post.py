@@ -66,6 +66,6 @@ async def update_post(
 
 @router.post("/{post_id}/upload")
 async def upload_image(
-        post_id: int, uploaded_file: UploadFile = File(...), db: Session = Depends(get_db)
+        post_id: int, image: UploadFile = File(...), db: Session = Depends(get_db)
 ):
-    return blog.upload_image(post_id, uploaded_file, db)
+    return await blog.upload_image(post_id, image, db)

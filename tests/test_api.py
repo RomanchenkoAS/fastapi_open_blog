@@ -124,9 +124,8 @@ class TestBlogPostEndpoints:
         self.test_db.commit()
         self.test_db.refresh(blog_post)
 
-        # Create a mock image file
-        image_data = b"fake_image_data"
-        files = {"file": ("test_image.png", image_data, "image/png")}
+        image_content = b"this is a test image"
+        files = {"image": ("test_image.png", io.BytesIO(image_content), "image/png")}
 
         response = self.test_client.post(f"/blogpost/{blog_post.id}/upload", files=files)
         assert response.status_code == status.HTTP_200_OK
@@ -135,4 +134,4 @@ class TestBlogPostEndpoints:
 
         # Verify that the image has been uploaded
         blog_post_with_image = (self.test_db.query(DbBlogPost).filter(DbBlogPost.id == blog_post.id).first())
-        assert blog_post_with_image.image == image_data
+        assert blog_post_with_image.image == image_content

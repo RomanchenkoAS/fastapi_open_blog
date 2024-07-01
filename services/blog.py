@@ -11,7 +11,7 @@ from db.models import DbBlogPost
 from db.schemas import PostIn, PostOut
 
 Error_404 = HTTPException(status_code=404, detail="Not found.")
-
+Error_integrity = HTTPException(400, detail="Update failed due to integrity constraint violation")
 
 async def create_post(post: PostIn, image: Optional[UploadFile], db: Session) -> PostOut:
     image_content = await image.read() if image else None
@@ -24,7 +24,7 @@ async def create_post(post: PostIn, image: Optional[UploadFile], db: Session) ->
         return PostOut.from_db_post(new_post)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(400, detail="Update failed due to integrity constraint violation")
+        raise Error_integrity
 
 
 def delete_post(post_id: int, db: Session) -> PostOut:
@@ -60,9 +60,6 @@ async def update_post(input_data: dict, image: Optional[UploadFile], post_id: in
     try:
         existing_post = db.query(DbBlogPost).get(post_id)
 
-        print(f"Existing : {existing_post}")
-        print(f"Input : {input_data}")
-
         if title := input_data.get("title", None):
             existing_post.title = title
         if content := input_data.get("content", None):
@@ -81,43 +78,26 @@ async def update_post(input_data: dict, image: Optional[UploadFile], post_id: in
         raise Error_404
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Update failed due to integrity constraint violation")
+        raise Error_integrity
 
 
 async def upload_image(post_id: int, image: UploadFile, db: Session):
-    raise NotImplementedError()
+    try:
+        existing_post = db.query(DbBlogPost).get(post_id)
+
+        image_content = await image.read()
+        existing_post.image = image_content
+
+        db.commit()
+        db.refresh(existing_post)
+        return PostOut.from_db_post(existing_post)
+    except NoResultFound:
+        raise Error_404
+    except IntegrityError:
+        db.rollback()
+        raise Error_integrity
 
 
 def get_posts(db: Session) -> List[PostOut]:
     posts = db.query(DbBlogPost).all()
     return [PostOut.from_db_post(post) for post in posts]
-
-# def get_author_id(author_name: str, db: Session) -> int:
-#     try:
-#         author = db.query(DbAuthor).filter_by(name=author_name).one()
-#     except NoResultFound:
-#         author = create_author(author_name, db)
-#     return author.id
-#
-#
-# def create_author(author_name: str, db: Session) -> DbAuthor:
-#     new_author = DbAuthor(name=author_name, is_admin=False)
-#     try:
-#         db.add(new_author)
-#         db.commit()
-#         db.refresh(new_author)
-#     except Exception as e:
-#         db.rollback()
-#         raise e
-#     return new_author
-#
-#
-# def update_author(author_id: int, db: Session) -> None:
-#     try:
-#         author = db.query(DbAuthor).get(author_id)
-#         author.last_posted = datetime.now()
-#         db.commit()
-#         db.refresh(author)
-#     except Exception as e:
-#         db.rollback()
-#         raise e

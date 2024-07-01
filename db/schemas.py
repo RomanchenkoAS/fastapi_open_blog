@@ -26,7 +26,6 @@ class PostOut(BaseModel):
 
     @classmethod
     def from_db_post(cls, db_post: DbBlogPost) -> "PostOut":
-        print(f"At transform we have: {db_post}")
         return cls(
             id=db_post.id,
             title=db_post.title,

@@ -11,12 +11,20 @@ from db.models import DbBlogPost
 from db.schemas import PostIn, PostOut
 
 Error_404 = HTTPException(status_code=404, detail="Not found.")
-Error_integrity = HTTPException(400, detail="Update failed due to integrity constraint violation")
+Error_integrity = HTTPException(
+    400, detail="Update failed due to integrity constraint violation"
+)
+
 
 async def create_post(post: PostIn, image: Optional[UploadFile], db: Session) -> PostOut:
     image_content = await image.read() if image else None
 
-    new_post = DbBlogPost(title=post.title, content=post.content, author=post.author, image=image_content, )
+    new_post = DbBlogPost(
+        title=post.title,
+        content=post.content,
+        author=post.author,
+        image=image_content,
+    )
     try:
         db.add(new_post)
         db.commit()
@@ -56,7 +64,9 @@ def get_post_image(post_id, db) -> StreamingResponse:
     return StreamingResponse(BytesIO(post.image), media_type="image/png")
 
 
-async def update_post(input_data: dict, image: Optional[UploadFile], post_id: int, db: Session) -> PostOut:
+async def update_post(
+    input_data: dict, image: Optional[UploadFile], post_id: int, db: Session
+) -> PostOut:
     try:
         existing_post = db.query(DbBlogPost).get(post_id)
 
